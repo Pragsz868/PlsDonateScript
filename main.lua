@@ -1,76 +1,120 @@
--- Fake Donate GUI by Prxgx Hub
+-- Load Kinlei's Material UI
+local Material = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kinlei/MaterialLua/master/Module.lua"))()
 
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
+-- Variables
+local player = game.Players.LocalPlayer
+local targetPlayerName = ""
+local robuxAmount = 0
 
--- GUI setup
-local screenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-screenGui.Name = "FakeDonateGui"
+-- Create main screen GUI
+local screenGui = Instance.new("ScreenGui", player.PlayerGui)
+screenGui.Name = "ForceDonateUI"
+screenGui.ResetOnSpawn = false
 
-local frame = Instance.new("Frame", screenGui)
-frame.Position = UDim2.new(0.3, 0, 0.3, 0)
-frame.Size = UDim2.new(0, 300, 0, 220)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
+-- Create icon button (draggable)
+local icon = Instance.new("ImageButton")
+icon.Name = "OpenGUIIcon"
+icon.Size = UDim2.new(0, 60, 0, 60)
+icon.Position = UDim2.new(0, 20, 0.5, -30)
+icon.BackgroundTransparency = 1
+icon.Image = "rbxassetid://17316405375" -- You must upload this image to Roblox and use the uploaded asset ID
+icon.Parent = screenGui
+icon.Draggable = true
 
--- Heading label
-local heading = Instance.new("TextLabel", frame)
-heading.Text = "Prxgx Hub"
-heading.Size = UDim2.new(1, 0, 0, 30)
-heading.BackgroundTransparency = 1
-heading.TextColor3 = Color3.new(1, 1, 1)
-heading.Font = Enum.Font.GothamBold
-heading.TextSize = 24
+-- Create GUI window (starts hidden)
+local UI = Material.Load({
+    Title = "Prxgx Hub",
+    Style = 3,
+    SizeX = 300,
+    SizeY = 250,
+    Theme = "Dark"
+})
 
-local usernameBox = Instance.new("TextBox", frame)
-usernameBox.PlaceholderText = "Username"
-usernameBox.Size = UDim2.new(1, -20, 0, 40)
-usernameBox.Position = UDim2.new(0, 10, 0, 40)
-usernameBox.TextSize = 18
-usernameBox.TextColor3 = Color3.new(1,1,1)
-usernameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-usernameBox.ClearTextOnFocus = false
+local MainTab = UI.New({ Title = "Main" })
+local guiFrame = UI.Base
+guiFrame.Visible = false
 
-local robuxBox = Instance.new("TextBox", frame)
-robuxBox.PlaceholderText = "Robux Amount"
-robuxBox.Size = UDim2.new(1, -20, 0, 40)
-robuxBox.Position = UDim2.new(0, 10, 0, 90)
-robuxBox.TextSize = 18
-robuxBox.TextColor3 = Color3.new(1,1,1)
-robuxBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-robuxBox.ClearTextOnFocus = false
+-- X Button
+local closeButton = Instance.new("TextButton")
+closeButton.Text = "X"
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -35, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.TextColor3 = Color3.new(1,1,1)
+closeButton.Parent = guiFrame
 
-local donateButton = Instance.new("TextButton", frame)
-donateButton.Text = "Fake Donate"
-donateButton.Size = UDim2.new(1, -20, 0, 40)
-donateButton.Position = UDim2.new(0, 10, 0, 140)
-donateButton.TextSize = 20
-donateButton.TextColor3 = Color3.new(1,1,1)
-donateButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-
--- Donation popup
-local popup = Instance.new("TextLabel", screenGui)
-popup.Size = UDim2.new(0, 400, 0, 50)
-popup.Position = UDim2.new(0.5, -200, 0.05, 0)
-popup.TextScaled = true
-popup.TextColor3 = Color3.new(1, 1, 0)
-popup.BackgroundTransparency = 1
-popup.Visible = false
-
-donateButton.MouseButton1Click:Connect(function()
-	local username = usernameBox.Text
-	local robux = tonumber(robuxBox.Text)
-
-	if username ~= "" and robux then
-		local formatted = tostring(robux):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
-		popup.Text = username .. " DONATED " .. formatted .. " ROBUX TO YOU!"
-		popup.Visible = true
-		popup.TextTransparency = 1
-		TweenService:Create(popup, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
-		
-		task.delay(4, function()
-			TweenService:Create(popup, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-		end)
-	end
+closeButton.MouseButton1Click:Connect(function()
+    guiFrame.Visible = false
+    targetPlayerName = ""
+    robuxAmount = 0
 end)
+
+-- Open GUI on icon click
+icon.MouseButton1Click:Connect(function()
+    guiFrame.Visible = not guiFrame.Visible
+end)
+
+-- Input: Target Username
+MainTab.TextField({
+    Text = "Target Username",
+    Placeholder = "Enter player's username",
+    Callback = function(value)
+        targetPlayerName = value
+    end
+})
+
+-- Input: Robux Amount
+MainTab.TextField({
+    Text = "Robux Amount",
+    Placeholder = "Enter Robux (e.g. 100)",
+    Callback = function(value)
+        local num = tonumber(value)
+        if num then robuxAmount = num end
+    end
+})
+
+-- Button: Force Donate
+MainTab.Button({
+    Text = "Force Donate Robux",
+    Callback = function()
+        local function formatNumber(n)
+            local str = tostring(n)
+            local k = str
+            while true do
+                k, str = str:gsub("^(-?%d+)(%d%d%d)", "%1,%2")
+                if str == 0 then break end
+            end
+            return k
+        end
+
+        local donationText = targetPlayerName .. " DONATED " .. formatNumber(robuxAmount) .. " TO YOU!"
+
+        -- Clone popup template if exists
+        if player.PlayerGui:FindFirstChild("UITemplates") and player.PlayerGui.UITemplates:FindFirstChild("donationPopup") then
+            local clone = player.PlayerGui.UITemplates.donationPopup:Clone()
+            clone.Message.Text = donationText
+            clone.Parent = player.PlayerGui:FindFirstChild("ScreenGui") or Instance.new("ScreenGui", player.PlayerGui)
+            clone.Transparency = 1
+            clone.UIScale.Scale = 0
+
+            if player:FindFirstChild("leaderstats") and player.leaderstats:FindFirstChild("Raised") then
+                player.leaderstats.Raised.Value += robuxAmount
+            end
+
+            local TweenService = game:GetService("TweenService")
+            TweenService:Create(clone, TweenInfo.new(0.5), { Transparency = 0 }):Play()
+            TweenService:Create(clone.UIScale, TweenInfo.new(0.3, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+            TweenService:Create(clone.Message, TweenInfo.new(1), {
+                MaxVisibleGraphemes = #donationText
+            }):Play()
+
+            task.delay(4, function()
+                TweenService:Create(clone, TweenInfo.new(0.3), { Transparency = 1 }):Play()
+                TweenService:Create(clone.UIScale, TweenInfo.new(0.3), { Scale = 0 }):Play()
+                task.delay(0.5, function()
+                    clone:Destroy()
+                end)
+            end)
+        end
+    end
+})
