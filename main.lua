@@ -5,7 +5,8 @@ local UI = Material.Load({
     Style = 3,
     SizeX = 300,
     SizeY = 250,
-    Theme = "Dark"
+    Theme = "Dark",
+    Draggable = false -- 👈 Prevent dragging
 })
 
 local targetPlayerName = ""
@@ -21,6 +22,9 @@ MainTab.TextField({
     Callback = function(value)
         if value ~= "" then
             targetPlayerName = value
+            pcall(function()
+                game:GetService("UserInputService"):GetFocusedTextBox():CaptureFocus()
+            end)
         else
             UI.Banner("Please enter a valid username")
         end
@@ -39,6 +43,9 @@ MainTab.TextField({
         local num = tonumber(value)
         if num then
             robuxAmount = num
+            pcall(function()
+                game:GetService("UserInputService"):GetFocusedTextBox():CaptureFocus()
+            end)
         else
             UI.Banner("Please enter a valid number")
         end
